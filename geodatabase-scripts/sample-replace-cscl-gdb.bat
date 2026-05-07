@@ -25,17 +25,18 @@ if exist "%PYTHON1%" (
 set PYTHONPATH0=%PYTHONPATH%
 set PYTHONPATH=%AGOLPUBCSCL%\src\py;%AGOLPUB%\src\py;%PYTHONPATH%
 echo starting up our work on %AGOLGDBNAME% on %date% at %time% > %BATLOG%
-%PROPY% %AGOLPUBCSCL%replace-cscl-gdb.py %CSCLGDB% %AGOLGDBNAME% %ITEMID% %WORKDIR% && (
+%PROPY% %AGOLPUBCSCL%replace-cscl-gdb.py %CSCLGDB% %AGOLGDBNAME% %ITEMID% %WORKDIR% >> %BATLOG% 2>&1 && (
    echo. >> %BATLOG% && echo replaced %AGOLGDBNAME% on %date% at %time% >> %BATLOG%
 ) || (
-   REM Trying to send the detailed python log here ex replace-cscl_pub-gdb-20250204-201009
-   %PROPY% %AGOLPUB%notify.py "Failed to replace %AGOLGDBNAME% (%ENV%) on nycmaps" %NOTIFY% "replace-cscl" && EXIT /B 1
+   %PROPY% %AGOLPUB%notify.py "Failed to replace %AGOLGDBNAME% (%ENV%) on nycmaps" %NOTIFY% "replace-cscl" >> %BATLOG% 2>&1
+   EXIT /B 1
 ) 
 echo. >> %BATLOG% && echo performing %AGOLGDBNAME% QA on %date% at %time% >> %BATLOG%
-%PROPY% %AGOLPUBCSCL%replace-cscl-qa.py %ITEMID% %AGOLGDBNAME% %WORKDIR% %GDBZIPSIZE% && (
-    %PROPY% %AGOLPUB%notify.py "%ENV%: Replaced and QAd nycmaps %AGOLGDBNAME% item %ITEMID%" %NOTIFY% "qa"
+%PROPY% %AGOLPUBCSCL%replace-cscl-qa.py %ITEMID% %AGOLGDBNAME% %WORKDIR% %GDBZIPSIZE% >> %BATLOG% 2>&1 && (
+    %PROPY% %AGOLPUB%notify.py "%ENV%: Replaced and QAd nycmaps %AGOLGDBNAME% item %ITEMID%" %NOTIFY% "qa" >> %BATLOG% 2>&1 || EXIT /B 1
 ) || (
-    %PROPY% %AGOLPUB%notify.py "%ENV%: Failed QA of %AGOLGDBNAME% item %ITEMID%" %NOTIFY% "qa"
+    %PROPY% %AGOLPUB%notify.py "%ENV%: Failed QA of %AGOLGDBNAME% item %ITEMID%" %NOTIFY% "qa" >> %BATLOG% 2>&1 || EXIT /B 1
+    EXIT /B 1
 ) 
 echo. >> %BATLOG% && echo completed notifying the squad of %AGOLGDBNAME% QA results on %date% at %time% >> %BATLOG%
 set PYTHONPATH=%PYTHONPATH0%
