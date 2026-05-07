@@ -94,6 +94,7 @@ def main():
             logging.exception(e)
             retval = 1
 
+        logging.info('Attempting cleanup of temp files (warnings can be ignored)')
         try:
             filepub.clean()
         except OSError as e:

@@ -1,0 +1,14 @@
+# mschell scratch dir with launch codes
+scratch/
+
+# python
+*.pyc
+
+*local*.bat
+geodatabase-scripts/*.bat
+!geodatabase-scripts/sample*.bat
+
+*.log
+state-*.json
+
+*.code-workspace
