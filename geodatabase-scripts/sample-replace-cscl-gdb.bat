@@ -1,5 +1,6 @@
-set CSCLGDB=D:\XX\XXX\xxxxx1.gdb
-set AGOLGDBNAME=xxxx.gdb
+set WHICHGDB=cscl 
+set CSCLGDB=D:\XX\XXX\%WHICHGDB%.gdb
+set AGOLGDBNAME=%WHICHGDB%.gdb
 set GDBZIPSIZE=500
 set ITEMID=1abcdefghijklmnopqrstuvwxyz0
 set ENV=XXX
@@ -10,7 +11,7 @@ set NYCMAPSCREDS=xxxxxxx
 set PROXY=http://xxxx:xxxx@xxxx.xxx:xxxxx
 set AGOLPUB=%BASEPATH%\agol_pub\
 set AGOLPUBCSCL=%BASEPATH%\agol_pub_cscl\
-set TARGETLOGDIR=%BASEPATH%\geodatabase-scripts\logs\replace_cscl_gdb\
+set TARGETLOGDIR=%BASEPATH%\geodatabase-scripts\logs\replace_%WHICHGDB%_gdb\
 set BATLOG=%TARGETLOGDIR%replace-XXXX-XXX-gdb.log
 set NOTIFY=xxxx@xxx.xxx.xxx
 set NOTIFYFROM=xxx@xxx.xxx.xxx
@@ -28,7 +29,7 @@ echo starting up our work on %AGOLGDBNAME% on %date% at %time% > %BATLOG%
 %PROPY% %AGOLPUBCSCL%replace-cscl-gdb.py %CSCLGDB% %AGOLGDBNAME% %ITEMID% %WORKDIR% >> %BATLOG% 2>&1 && (
    echo. >> %BATLOG% && echo replaced %AGOLGDBNAME% on %date% at %time% >> %BATLOG%
 ) || (
-   %PROPY% %AGOLPUB%notify.py "Failed to replace %AGOLGDBNAME% (%ENV%) on nycmaps" %NOTIFY% "replace-cscl" >> %BATLOG% 2>&1
+   %PROPY% %AGOLPUB%notify.py "Failed to replace %AGOLGDBNAME% (%ENV%) on nycmaps" %NOTIFY% "replace-%WHICHGDB%" >> %BATLOG% 2>&1
    EXIT /B 1
 ) 
 echo. >> %BATLOG% && echo performing %AGOLGDBNAME% QA on %date% at %time% >> %BATLOG%
