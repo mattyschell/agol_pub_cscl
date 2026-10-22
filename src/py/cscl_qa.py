@@ -1,10 +1,47 @@
+import importlib
 import logging
 import os
+import sys
 
 try:
     import arcpy
 except ImportError:
     arcpy = None
+
+
+def check_row_counts(geodatabase
+                    ,logger):
+
+    qadir = os.path.abspath(os.path.join(os.path.dirname(__file__)
+                                       ,'..'
+                                       ,'..'
+                                       ,'..'
+                                       ,'cscl_qa'
+                                       ,'py'))
+    if not os.path.isfile(os.path.join(qadir, 'qa_row_count.py')):
+        raise FileNotFoundError('Row-count QA dependency missing: {0}'.format(
+            qadir))
+
+    sys.path.insert(0, qadir)
+    try:
+        rowqa = importlib.import_module('qa_row_count')
+    finally:
+        sys.path.pop(0)
+
+    rangefile = os.environ.get(
+        'CSCL_ROWCOUNT_RANGE'
+       ,os.path.join(os.path.dirname(rowqa.__file__)
+                     ,'resources'
+                     ,'rowcountrange'))
+    logger.info('Using row-count ranges from {0}'.format(rangefile))
+    ranges = rowqa.get_ranges(rangefile)
+    if not ranges:
+        raise ValueError('No row-count ranges found in {0}'.format(rangefile))
+
+    failures = rowqa.check_ranges(geodatabase, ranges, logger)
+    if failures != 0:
+        raise ValueError('Row-count QA failed for {0} datasets'.format(
+            failures))
 
 
 def iszip(testgdb):

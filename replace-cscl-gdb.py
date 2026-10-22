@@ -5,6 +5,7 @@ import sys
 import time
 
 import cscl_gdb
+import cscl_qa
 import organization
 import publisher
 
@@ -26,13 +27,6 @@ def main():
     retval = 1
     timestr = time.strftime('%Y%m%d-%H%M%S')
 
-    try:
-        org = organization.Organization.from_env()
-        filegdb = cscl_gdb.LocalGeodatabase(args.srcgdb)
-        filepub = cscl_gdb.PublishWorkflow(filegdb)
-    except Exception as e:
-        raise ValueError('Failure {0} in instantiation'.format(e)) from e
-
     targetlog = os.path.join(
         os.environ['TARGETLOGDIR']
        ,'replace-{0}-{1}.log'.format(
@@ -42,6 +36,20 @@ def main():
 
     logging.basicConfig(filename=targetlog
                        ,level=logging.INFO)
+
+    logging.info('Checking source row counts for {0}'.format(args.srcgdb))
+    try:
+        cscl_qa.check_row_counts(args.srcgdb, logging.getLogger(__name__))
+    except Exception:
+        logging.exception('Source row-count QA failed; replacement aborted')
+        sys.exit(1)
+
+    try:
+        org = organization.Organization.from_env()
+        filegdb = cscl_gdb.LocalGeodatabase(args.srcgdb)
+        filepub = cscl_gdb.PublishWorkflow(filegdb)
+    except Exception as e:
+        raise ValueError('Failure {0} in instantiation'.format(e)) from e
 
     logging.info('precleaning any old temp files at {0}'.format(args.tempdir))
     filepub.clean()
