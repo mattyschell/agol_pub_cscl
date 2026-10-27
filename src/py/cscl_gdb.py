@@ -1,7 +1,16 @@
+import logging
 import os
 import shutil
 import stat
+import tempfile
+import time
 from pathlib import Path
+
+FALLBACK_PREFIX = 'renamezip-'
+REMOVE_RETRIES = 5
+REMOVE_RETRY_SECONDS = 2
+
+logger = logging.getLogger(__name__)
 
 
 class PublishWorkflowError(Exception):
@@ -65,7 +74,21 @@ class PublishWorkflow(object):
         self.renamed = os.path.join(zippath
                                    ,name)
 
-        self.clean()
+        self.purge_fallbacks(zippath)
+
+        try:
+            self.clean()
+        except OSError as e:
+            # stale temp files are held by another process or bad ACLs
+            logger.warning('Could not clean {0} ({1}), using a fresh '
+                           'temp subdirectory'.format(zippath
+                                                     ,e))
+            zippath = tempfile.mkdtemp(prefix=FALLBACK_PREFIX
+                                      ,dir=zippath)
+            self.tempcopy = os.path.join(zippath
+                                        ,self.localgdb.gdbname)
+            self.renamed = os.path.join(zippath
+                                       ,name)
 
         try:
             shutil.copytree(self.localgdb.gdb
@@ -111,9 +134,25 @@ class PublishWorkflow(object):
                        ,path
                        ,_):
 
-        os.chmod(path
-                ,stat.S_IWRITE)
-        func(path)
+        for attempt in range(REMOVE_RETRIES):
+            try:
+                os.chmod(path
+                        ,stat.S_IWRITE)
+                func(path)
+                return
+            except PermissionError:
+                if attempt == REMOVE_RETRIES - 1:
+                    raise
+                time.sleep(REMOVE_RETRY_SECONDS)
+
+    def purge_fallbacks(self
+                       ,zippath):
+
+        # best effort, leftovers from earlier runs may still be locked
+        for stale in Path(zippath).glob(FALLBACK_PREFIX + '*'):
+            if stale.is_dir():
+                shutil.rmtree(stale
+                             ,ignore_errors=True)
 
     def has_locks(self):
 

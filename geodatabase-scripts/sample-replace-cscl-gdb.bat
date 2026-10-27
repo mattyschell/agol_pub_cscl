@@ -1,3 +1,5 @@
+@echo off
+setlocal
 set WHICHGDB=cscl 
 set CSCLGDB=D:\XX\XXX\%WHICHGDB%.gdb
 set AGOLGDBNAME=%WHICHGDB%.gdb

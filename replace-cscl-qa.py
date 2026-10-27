@@ -1,7 +1,10 @@
 import argparse
 import os
+import shutil
 import sys
+import tempfile
 import time
+from pathlib import Path
 
 import arcpy
 import cscl_gdb
@@ -36,16 +39,25 @@ def main():
 
     qalogger = cscl_qa.qalogging(targetlog)
 
+    # best effort, leftovers from earlier runs may still be locked
+    for stale in Path(args.ptempdir).glob('qa-*'):
+        if stale.is_dir():
+            shutil.rmtree(stale
+                         ,ignore_errors=True)
+
+    workdir = tempfile.mkdtemp(prefix='qa-'
+                              ,dir=args.ptempdir)
+
     org = organization.Organization.from_env()
     pubgdb = publisher.PublishedItem(org
                                     ,args.pitemid)
-    pubgdb.download(args.ptempdir)
+    pubgdb.download(workdir)
 
-    testgdb = cscl_gdb.LocalGeodatabase(os.path.join(args.ptempdir
+    testgdb = cscl_gdb.LocalGeodatabase(os.path.join(workdir
                                                     ,args.pgdbname))
     testpub = cscl_gdb.PublishWorkflow(testgdb)
     testpub.zipped = pubgdb.zipped
-    testpub.unzip(args.ptempdir)
+    testpub.unzip(workdir)
 
     retqareport = cscl_qa.report(testpub
                                 ,args.pgdbname
