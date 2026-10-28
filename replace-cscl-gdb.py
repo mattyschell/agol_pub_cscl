@@ -44,6 +44,13 @@ def main():
         logging.exception('Source row-count QA failed; replacement aborted')
         sys.exit(1)
 
+    logging.info('Checking source overlaps for {0}'.format(args.srcgdb))
+    try:
+        cscl_qa.check_overlaps(args.srcgdb, logging.getLogger(__name__))
+    except Exception:
+        logging.exception('Source overlap QA failed; replacement aborted')
+        sys.exit(1)
+
     try:
         org = organization.Organization.from_env()
         filegdb = cscl_gdb.LocalGeodatabase(args.srcgdb)

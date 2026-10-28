@@ -309,10 +309,46 @@ class ReplaceGateTestCase(unittest.TestCase):
                 self.organization.Organization.from_env.assert_not_called()
                 self.publisher.PublishedItem.assert_not_called()
 
+    def test_failed_overlap_qa_prevents_packaging_and_upload(self):
+
+        with patch.object(cscl_qa, 'check_row_counts'):
+            with patch.object(cscl_qa, 'check_overlaps'
+                              ,side_effect=ValueError('Overlap')):
+                with patch.object(cscl_gdb, 'PublishWorkflow') as workflow:
+                    with self.assertRaises(SystemExit) as result:
+                        self.replace.main()
+
+        self.assertEqual(result.exception.code, 1)
+        workflow.assert_not_called()
+        self.publisher.PublishedItem.assert_not_called()
+
+    def test_overlap_tolerances_read_from_file(self):
+
+        with tempfile.TemporaryDirectory() as td:
+            path = os.path.join(td, 'overlaptolerance')
+            with open(path, 'w') as f:
+                f.write('A 50\n\nB 300\n')
+            self.assertEqual(cscl_qa.get_overlap_tolerances(path)
+                            ,{'A': 50.0, 'B': 300.0})
+
+    def test_overlap_failure_reports_layers(self):
+
+        overlapqa = Mock()
+        overlapqa.qa_overlap.side_effect = [True, False]
+        with patch.object(cscl_qa, '_import_qa', return_value=overlapqa):
+            with self.assertRaises(ValueError) as result:
+                cscl_qa.check_overlaps('source.gdb'
+                                      ,Mock()
+                                      ,{'A': 1, 'B': 2})
+
+        self.assertIn('A', str(result.exception))
+        self.assertNotIn('B', str(result.exception))
+
     def test_passed_qa_precedes_packaging_and_upload(self):
 
         calls = Mock()
-        with patch.object(cscl_qa, 'check_row_counts') as check:
+        with patch.object(cscl_qa, 'check_overlaps'), \
+             patch.object(cscl_qa, 'check_row_counts') as check:
             with patch.object(cscl_gdb, 'PublishWorkflow') as workflow:
                 calls.attach_mock(check, 'check')
                 calls.attach_mock(workflow.return_value.renamezip, 'package')

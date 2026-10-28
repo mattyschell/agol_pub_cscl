@@ -8,6 +8,7 @@ set ITEMID=1abcdefghijklmnopqrstuvwxyz0
 set ENV=XXX
 set BASEPATH=X:\XXX
 set "CSCL_ROWCOUNT_RANGE=%~dp0rowcountrange"
+set "CSCL_OVERLAP_TOLERANCE=%~dp0overlaptolerance"
 set WORKDIR=%BASEPATH%\temp
 set NYCMAPSUSER=xxx.xxx.xxxx
 set NYCMAPSCREDS=xxxxxxx
